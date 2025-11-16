@@ -18,11 +18,13 @@ if [ ! -d ${WORK_DIR}logs ]; then
     mkdir -p ${WORK_DIR}logs
 fi
 
+export ENABLE_PLOT_MODE=1
 PYTHONPATH="$(dirname $0)/..":$PYTHONPATH \
-python -m torch.distributed.launch \
+python -m torch.distributed.run \
     --nproc_per_node=$GPUS_PER_NODE \
     --master_port=$MASTER_PORT \
     $(dirname "$0")/test.py \
+    --launcher pytorch \
     $CFG \
     $CKPT \
     --launcher pytorch ${@:4} \

@@ -86,6 +86,8 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
     have_mask = False
     num_occ = 0
     for i, data in enumerate(data_loader):
+        # if i >= 5:
+        #     break
         with torch.no_grad():
             result = model(return_loss=False, rescale=True, **data)
 
@@ -115,16 +117,17 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
                                                 result[0]['occ']['ins_seg_gt'][..., limits, limits].contiguous())
 
             # Pop out unnecessary occ results, avoid appending it to cpu when collect_results_cpu
-            if os.environ.get('ENABLE_PLOT_MODE', None) is None:
-                result[0].pop('occ', None)
-                result[0].pop('planning', None)
-            else:
+            if os.environ.get('ENABLE_PLOT_MODE', None) is None: # 没有设置，就走这条路
+                pass
+                # result[0].pop('occ', None)
+                # result[0].pop('planning', None) # 搞不明白为什么这样要这样搞
+            else: # 设置后走这条路了
                 for k in ['seg_gt', 'ins_seg_gt', 'pred_ins_sigmoid', 'seg_out', 'ins_seg_out']:
                     if k in result[0]['occ']:
                         result[0]['occ'][k] = result[0]['occ'][k].detach().cpu()
                 for k in ['bbox', 'segm', 'labels', 'panoptic', 'drivable', 'score_list', 'lane', 'lane_score', 'stuff_score_list']:
                     if k in result[0]['pts_bbox'] and isinstance(result[0]['pts_bbox'][k], torch.Tensor):
-                        result[0]['pts_bbox'][k] = result[0]['pts_bbox'][k].detach().cpu()
+                        result[0]['pts_bbox'][k] = result[0]['pts_bbox'][k].detach().cpu() #不可能没有pts_bbox啊,这里好奇怪
 
             # encode mask results
             if isinstance(result, dict):
@@ -184,7 +187,8 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
         ret_results['planning_results_computed'] = planning_results
 
     if mask_results is not None:
-        ret_results['mask_results'] = mask_results
+        ret_results['mask_results'] = mask_results 
+    # print('returning results',ret_resutl)
     return ret_results
 
 

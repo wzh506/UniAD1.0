@@ -137,7 +137,8 @@ class MotionHead(BaseMotionHead):
         losses = self.loss(*loss_inputs)
 
         def filter_vehicle_query(outs_motion, all_matched_idxes, gt_labels_3d, vehicle_id_list):
-            query_label = gt_labels_3d[0][-1][all_matched_idxes[0]]
+            # query_label = gt_labels_3d[0][-1][all_matched_idxes[0]]
+            query_label = gt_labels_3d[0][-1][all_matched_idxes[0].to(gt_labels_3d[0][-1].device)] #防止报错
             # select vehicle query according to vehicle_id_list
             vehicle_mask = torch.zeros_like(query_label)
             for veh_id in vehicle_id_list:
@@ -186,7 +187,8 @@ class MotionHead(BaseMotionHead):
                 return None
 
             # select vehicle query according to vehicle_id_list
-            vehicle_mask = torch.zeros_like(labels)
+            # vehicle_mask = torch.zeros_like(labels)
+            vehicle_mask = torch.zeros_like(labels, device=labels.device)
             for veh_id in vehicle_id_list:
                 vehicle_mask |=  labels == veh_id
             outs_motion['traj_query'] = outs_motion['traj_query'][:, :, vehicle_mask>0]
@@ -466,7 +468,8 @@ class MotionHead(BaseMotionHead):
         gt_fut_traj_all = []
         gt_fut_traj_mask_all = []
         for i in range(num_imgs):
-            matched_gt_idx = all_matched_idxes[i]
+            # matched_gt_idx = all_matched_idxes[i]
+            matched_gt_idx = all_matched_idxes[i].to(gt_bboxes_3d[i][-1].tensor.device)
             valid_traj_masks = matched_gt_idx >= 0
             matched_gt_fut_traj = gt_fut_traj[i][matched_gt_idx][valid_traj_masks]
             matched_gt_fut_traj_mask = gt_fut_traj_mask[i][matched_gt_idx][valid_traj_masks]
@@ -517,7 +520,8 @@ class MotionHead(BaseMotionHead):
         traj_prob_all = []
         traj_preds_all = []
         for i in range(num_imgs):
-            matched_gt_idx = all_matched_idxes[i]
+            # matched_gt_idx = all_matched_idxes[i]
+            matched_gt_idx = all_matched_idxes[i].to(traj_scores.device)
             valid_traj_masks = matched_gt_idx >= 0
             # select valid and matched
             batch_traj_prob = traj_scores[i, valid_traj_masks, :]

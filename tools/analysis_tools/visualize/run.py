@@ -73,10 +73,11 @@ class Visualizer:
 
     def _parse_predictions_multitask_pkl(self, predroot):
 
-        outputs = mmcv.load(predroot)
+        outputs = mmcv.load(predroot) #这一步大概10min
         outputs = outputs['bbox_results']
         prediction_dict = dict()
-        for k in range(len(outputs)):
+        from tqdm import tqdm
+        for k in tqdm(range(len(outputs)),desc='parsing predictions...'):
             token = outputs[k]['token']
             self.token_set.add(token)
             if self.show_sdc_traj:
@@ -128,8 +129,12 @@ class Visualizer:
                 if track_scores[i] < 0.25:
                     continue
                 if occ_map is not None and track_labels[i] in self.veh_id_list:
-                    occ_map_cur = occ_map[occ_idx, :, ::-1]
-                    occ_idx += 1
+                    # 这里occ数量不够，不知道为什么
+                    if occ_idx < occ_map.shape[0]:
+                        occ_map_cur = occ_map[occ_idx, :, ::-1]
+                        occ_idx += 1
+                    else:
+                        occ_map_cur = None  # 或者 break，或 log warning
                 else:
                     occ_map_cur = None
                 if track_ids is not None:
@@ -160,7 +165,7 @@ class Visualizer:
             if self.with_map:
                 map_thres = 0.7
                 score_list = outputs[k]['pts_bbox']['score_list'].cpu().numpy().transpose([
-                    1, 2, 0])
+                    1, 2, 0]) # 这里额报错了，无法理解
                 predicted_map_seg = outputs[k]['pts_bbox']['lane_score'].cpu().numpy().transpose([
                     1, 2, 0])  # H, W, C
                 predicted_map_seg[..., -1] = score_list[..., -1]
@@ -283,8 +288,8 @@ class Visualizer:
 
 def main(args):
     render_cfg = dict(
-        with_occ_map=False,
-        with_map=False,
+        with_occ_map=True,
+        with_map=True,
         with_planning=True,
         with_pred_box=True,
         with_pred_traj=True,
@@ -296,8 +301,8 @@ def main(args):
         show_legend=True,
         show_sdc_traj=False
     )
-
-    viser = Visualizer(version='v1.0-mini', predroot=args.predroot, dataroot='data/nuscenes', **render_cfg)
+    # 做好准备，这个会很慢,然后千万不要把pkl文件放在data-al文件夹里面
+    viser = Visualizer(version='v1.0-trainval', predroot=args.predroot, dataroot='data/nuscenes', **render_cfg)
 
     if not os.path.exists(args.out_folder):
         os.makedirs(args.out_folder)
@@ -312,6 +317,11 @@ def main(args):
         sample_token = viser.nusc.sample[i]['token']
         scene_token = viser.nusc.sample[i]['scene_token']
 
+        sample = viser.nusc.get('sample', sample_token)
+        cam_data = viser.nusc.get('sample_data', sample['data']['CAM_FRONT'])
+        image_filename = os.path.splitext(os.path.basename(cam_data['filename']))[0]
+        # print(image_filename)
+
         if scene_token_to_name[scene_token] not in val_splits:
             continue
 
@@ -319,11 +329,12 @@ def main(args):
             print(i, sample_token, 'not in prediction pkl!')
             continue
 
-        viser.visualize_bev(sample_token, os.path.join(args.out_folder, str(i).zfill(3)))
+        # viser.visualize_bev(sample_token, os.path.join(args.out_folder, str(i).zfill(3)))
+        viser.visualize_bev(sample_token, os.path.join(args.out_folder, image_filename))
 
         if args.project_to_cam:
-            viser.visualize_cam(sample_token, os.path.join(args.out_folder, str(i).zfill(3)))
-            viser.combine(os.path.join(args.out_folder, str(i).zfill(3)))
+            viser.visualize_cam(sample_token, os.path.join(args.out_folder, image_filename))
+            viser.combine(os.path.join(args.out_folder, image_filename))
 
     viser.to_video(args.out_folder, args.demo_video, fps=4, downsample=2)
 

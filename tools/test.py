@@ -28,7 +28,7 @@ def parse_args():
         description='MMDet test (and eval) a model')
     parser.add_argument('config', help='test config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
-    parser.add_argument('--out', default='output/results.pkl', help='output result file in pickle format')
+    parser.add_argument('--out', default='/ephstorage/uniad/output/results.pkl', help='output result file in pickle format')
     parser.add_argument(
         '--fuse-conv-bn',
         action='store_true',
@@ -55,6 +55,7 @@ def parse_args():
         help='whether to use gpu to collect results.')
     parser.add_argument(
         '--tmpdir',
+        default='/ephstorage/tmp',
         help='tmp directory used for collecting results from multiple '
         'workers, available when gpu-collect is not specified')
     parser.add_argument('--seed', type=int, default=0, help='random seed')
@@ -108,6 +109,7 @@ def parse_args():
 def main():
     args = parse_args()
 
+    torch.multiprocessing.set_start_method('fork')
     assert args.out or args.eval or args.format_only or args.show \
         or args.show_dir, \
         ('Please specify at least one operation (save/eval/format/show the '
@@ -220,9 +222,9 @@ def main():
         model.PALETTE = dataset.PALETTE
 
     if not distributed:
-        assert False
-        # model = MMDataParallel(model, device_ids=[0])
-        # outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
+        # assert False
+        model = MMDataParallel(model, device_ids=[0])
+        outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
     else:
         model = MMDistributedDataParallel(
             model.cuda(),

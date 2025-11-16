@@ -150,3 +150,6 @@ debug/
 *projs/
 
 core.*
+output
+*.tar.gz
+nuscenes

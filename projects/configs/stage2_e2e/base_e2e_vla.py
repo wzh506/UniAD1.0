@@ -688,9 +688,9 @@ lr_config = dict(
     warmup_ratio=1.0 / 3,
     min_lr_ratio=1e-3,
 )
-total_epochs = 20
+total_epochs = 40 #多训练一些epoch
 evaluation = dict(
-    interval=4,
+    interval=20, #每20轮eval一次
     pipeline=test_pipeline,
     planning_evaluation_strategy=planning_evaluation_strategy,
 )
@@ -702,3 +702,5 @@ checkpoint_config = dict(interval=1)
 load_from = "ckpts/uniad_base_track_map.pth"
 
 find_unused_parameters = True
+
+work_dir = '/ephstorage/uniad/work_dirs/stage2_e2e/base_e2e_vla/'

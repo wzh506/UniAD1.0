@@ -99,6 +99,12 @@ def parse_args():
 def main():
     args = parse_args()
 
+    try:
+        local_rank = int(os.environ['LOCAL_RANK'])
+        torch.cuda.set_device(local_rank)
+        torch.multiprocessing.set_start_method('fork')
+    except:
+        print('seems to be single gpu for debug,run!')
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)

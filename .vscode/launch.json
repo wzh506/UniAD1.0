@@ -1,0 +1,113 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+    
+        {
+            "name": "Debug Training",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/tools/train.py",
+            "args": [
+                "./projects/configs/stage1_track_map/base_track_map.py", 
+                "--gpus",
+                "1",
+                "--deterministic",
+                "--work-dir",
+                "${workspaceFolder}/work_dirs/train1"
+            ],
+            "env": {
+                "MASTER_ADDR": "127.0.0.1",
+                "MASTER_PORT": "28596",
+                "PYTHONPATH": "${workspaceFolder}/..:${env:PYTHONPATH}"
+            },
+            "console": "integratedTerminal"
+        },
+   {
+      "name": "UniAD Eval (single GPU)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/test.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+        "CUDA_VISIBLE_DEVICES": "0",
+        "OMP_NUM_THREADS": "4"
+      },
+      "args": [
+        "projects/configs/stage2_e2e/base_e2e.py",
+        "ckpts/uniad_base_e2e.pth",
+        "--eval", "bbox",
+        "--show-dir", "${workspaceFolder}/projects/work_dirs/single_gpu_eval",
+        "--launcher", "none",
+        // "--out",
+        // "",
+      ]
+    },
+    {
+      "name": "UniAD Visualize Result",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/tools/analysis_tools/visualize/run.py",
+      "args": [
+          "--predroot", "output/results.pkl",
+          "--out_folder", "output/visualizations",
+          "--demo_video", "test_demo.avi",
+          "--project_to_cam", "True"
+      ],
+      "env": {
+          "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}"
+      },
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+        {
+            "name": "Debug UniAD Distributed Eval (8 GPUs)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "torch.distributed.run",
+            "args": [
+                "--nproc_per_node=2",
+                "--master_port=29500",
+                "tools/test.py",
+                "--launcher", "pytorch",
+                "projects/configs/stage2_e2e/base_e2e.py",
+                "ckpts/uniad_base_e2e.pth",
+                "--eval", "bbox",
+                "--show-dir", "projects/work_dirs/stage2_e2e/base_e2e"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:$PYTHONPATH",
+                "ENABLE_PLOT_MODE": "1"
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
+
+    ]
+}
+
+
+
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Debug Evaluating",
+//             "type": "python",
+//             "request": "launch",
+//             "program": "${workspaceFolder}/tools/test.py",
+//             "args": [
+//                 "./projects/configs/stage1_track_map/base_track_map.py", 
+//                 "./ckpts/uniad_base_track_map.pth",
+//                 "--show-dir",
+//                 "${workspaceFolder}/work_dirs/eval1"
+//             ],
+//             "env": {
+//                 "PYTHONPATH": "${workspaceFolder}/..:${env:PYTHONPATH}"
+//             },
+//             "console": "integratedTerminal"
+//         }
+//     ]
+// }
